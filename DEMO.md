@@ -26,6 +26,16 @@ Open the repo in AGY and give the agent this prompt:
 *Optional finish:* "Comment on the INS-102 issue with the AC → test table." This closes the loop
 in the tracker.
 
+**Jetski variant (internal rehearsals):** Jetski uses the GitHub CLI login, so no MCP setup is needed:
+
+> Read GitHub issue INS-102 in gprothia/insurance-qa-demo (`gh issue view 2`). Following
+> GEMINI.md, write API and UI tests for every acceptance criterion, run them against
+> localhost:8000, fix any test problems, and finish with a table mapping each AC to its test.
+
+Rehearsal result: 8 tests (7 API + 1 UI) generated, all passing on the first run, with the same
+AC coverage as `golden/ins-102-tests`. See branch `rehearsal/ins-102-tests`. The tests run in
+under 10 seconds locally.
+
 What to point out while it works: it reads the acceptance criteria, checks `/openapi.json`,
 writes `tests/api/test_INS_102_file_claim.py` and `tests/ui/test_INS_102_file_claim_ui.py`,
 runs them and fixes them itself. The Playwright test drives a real browser.

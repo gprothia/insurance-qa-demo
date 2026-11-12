@@ -1,10 +1,12 @@
 # Acme Mutual: spec-driven testing demo
 
-**Gemini + Antigravity (AGY) turn Jira/Markdown specs into executable API and UI test suites
-that run in ephemeral GKE Autopilot sandboxes on every PR.**
+**Gemini + Antigravity (AGY) turn issue-tracker/Markdown specs into executable API and UI test
+suites that run in ephemeral GKE Autopilot sandboxes on every PR.**
 
 A small auto-insurance app (FastAPI): quotes → policies → claims, with a REST API and a
-server-rendered UI. Specs live in Jira (or `specs/*.md`). An AGY agent turns their acceptance
+server-rendered UI. Specs live in GitHub Issues (created from `specs/*.md` by
+`scripts/create_issues.sh`; Jira works the same way via Atlassian's MCP server). An AGY agent
+turns their acceptance
 criteria into pytest + Playwright tests, following [`GEMINI.md`](GEMINI.md). Every PR deploys
 the app and tests into its own namespace on GKE Autopilot, runs them, posts a per-criterion
 results table on the PR, and tears the namespace down.
@@ -15,7 +17,7 @@ app/                   FastAPI app: pricing.py holds all business rules
 tests/api, tests/ui    pytest (httpx) and Playwright tests, one per acceptance criterion
 k8s/                   app Deployment/Service + in-cluster test-runner Job
 .github/workflows/     pr-sandbox.yml: build → namespace → test → PR comment → teardown
-scripts/               setup_gcp.sh (cluster, registry, WIF), summarize_junit.py
+scripts/               setup_gcp.sh (cluster, registry, WIF), create_issues.sh, summarize_junit.py
 GEMINI.md              rules the agent follows when writing tests
 DEMO.md                run-of-show for the live demo
 ```

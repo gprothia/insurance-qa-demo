@@ -1,9 +1,11 @@
 # Test-generation rules for Gemini / Antigravity agents
 
-You turn specs (Jira stories via the Atlassian MCP server, or `specs/*.md`) into
-executable tests for the Acme Mutual app. Follow these rules exactly.
+You turn specs into executable tests for the Acme Mutual app. Specs come from
+**GitHub issues** labelled `story` (via the GitHub MCP server), Jira stories (via the
+Atlassian MCP server), or `specs/*.md`. Follow these rules exactly.
 
 ## Inputs
+- The spec key is the `INS-nnn` prefix of the issue or story title (not the GitHub issue number).
 - The spec's **acceptance criteria (ACn)** are the source of truth. Read `openapi.json`
   (`GET /openapi.json` on the running app) for request/response shapes.
 - Never change app code to make a test pass. If the spec and app disagree, report it.

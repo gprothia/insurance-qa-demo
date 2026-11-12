@@ -31,9 +31,19 @@ gcloud artifacts repositories describe "$AR_REPO" --location "$REGION" >/dev/nul
 # 3. CI service account: can push images and manage workloads in the cluster.
 gcloud iam service-accounts describe "$SA_EMAIL" >/dev/null 2>&1 \
   || gcloud iam service-accounts create "$SA_NAME" --display-name "GitHub PR sandbox CI"
+
+# A new service account can take up to a minute to become visible to IAM, so retry.
+retry() {
+  for attempt in 1 2 3 4 5 6; do
+    "$@" >/dev/null 2>&1 && return 0
+    echo "  waiting for IAM to see $SA_EMAIL (attempt $attempt/6)..."
+    sleep 15
+  done
+  "$@" # final attempt: show the real error
+}
 for role in roles/container.developer roles/artifactregistry.writer; do
-  gcloud projects add-iam-policy-binding "$PROJECT_ID" \
-    --member "serviceAccount:$SA_EMAIL" --role "$role" --condition=None >/dev/null
+  retry gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+    --member "serviceAccount:$SA_EMAIL" --role "$role" --condition=None
 done
 
 # 4. Workload Identity Federation: only this GitHub repo can impersonate the SA.
@@ -46,9 +56,9 @@ gcloud iam workload-identity-pools providers describe "$POOL" --location global 
        --issuer-uri "https://token.actions.githubusercontent.com" \
        --attribute-mapping "google.subject=assertion.sub,attribute.repository=assertion.repository" \
        --attribute-condition "assertion.repository=='$GITHUB_REPO'"
-gcloud iam service-accounts add-iam-policy-binding "$SA_EMAIL" \
+retry gcloud iam service-accounts add-iam-policy-binding "$SA_EMAIL" \
   --role roles/iam.workloadIdentityUser \
-  --member "principalSet://iam.googleapis.com/projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/$POOL/attribute.repository/$GITHUB_REPO" >/dev/null
+  --member "principalSet://iam.googleapis.com/projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/$POOL/attribute.repository/$GITHUB_REPO"
 
 cat <<EOF
 

@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Policy issued · Acme Mutual{% endblock %}
+{% block content %}
+<h2>Policy issued</h2>
+<dl class="card">
+  <dt>Policy ID</dt><dd data-testid="policy-id">{{ policy.id }}</dd>
+  <dt>Coverage</dt><dd data-testid="coverage-period">{{ policy.start_date }} to {{ policy.end_date }}</dd>
+  <dt>Annual premium</dt><dd data-testid="premium">{{ policy.annual_premium|money }}</dd>
+</dl>
+<p><a href="/ui/claims/new?policy_id={{ policy.id }}">File a claim on this policy</a></p>
+{% endblock %}

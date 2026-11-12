@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Claim received · Acme Mutual{% endblock %}
+{% block content %}
+<h2>Claim received</h2>
+<dl class="card">
+  <dt>Claim ID</dt><dd data-testid="claim-id">{{ claim.id }}</dd>
+  <dt>Status</dt><dd data-testid="claim-status">{{ claim.status }}</dd>
+  <dt>Claim amount</dt><dd data-testid="claim-amount">{{ claim.amount|money }}</dd>
+  <dt>Estimated payout</dt><dd data-testid="payout">{{ claim.payout|money }}</dd>
+</dl>
+{% endblock %}

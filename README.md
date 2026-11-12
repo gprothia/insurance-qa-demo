@@ -1,0 +1,41 @@
+# Acme Mutual: spec-driven testing demo
+
+**Gemini + Antigravity (AGY) turn Jira/Markdown specs into executable API and UI test suites
+that run in ephemeral GKE Autopilot sandboxes on every PR.**
+
+A small auto-insurance app (FastAPI): quotes → policies → claims, with a REST API and a
+server-rendered UI. Specs live in Jira (or `specs/*.md`). An AGY agent turns their acceptance
+criteria into pytest + Playwright tests, following [`GEMINI.md`](GEMINI.md). Every PR deploys
+the app and tests into its own namespace on GKE Autopilot, runs them, posts a per-criterion
+results table on the PR, and tears the namespace down.
+
+```
+specs/                 INS-101 (auto quote) and INS-102 (file a claim) user stories
+app/                   FastAPI app: pricing.py holds all business rules
+tests/api, tests/ui    pytest (httpx) and Playwright tests, one per acceptance criterion
+k8s/                   app Deployment/Service + in-cluster test-runner Job
+.github/workflows/     pr-sandbox.yml: build → namespace → test → PR comment → teardown
+scripts/               setup_gcp.sh (cluster, registry, WIF), summarize_junit.py
+GEMINI.md              rules the agent follows when writing tests
+DEMO.md                run-of-show for the live demo
+```
+
+## Run locally
+```bash
+make install          # venv + deps + Chromium
+make run              # http://localhost:8000 (API docs at /docs)
+make test             # in another terminal: API + UI tests
+```
+
+## Branches
+| Branch | Purpose |
+|---|---|
+| `main` | App + INS-101 tests. INS-102 has a spec but **no tests**; the agent writes them live |
+| `golden/ins-102-tests` | Known-good INS-102 tests (backup if the live generation runs long) |
+| `demo/young-driver-bug` | Plants a pricing bug (young-driver age cut-off 25 → 21). Open a PR from it to show the sandbox catching it |
+
+## One-time cloud setup
+```bash
+PROJECT_ID=<argolis-project> ./scripts/setup_gcp.sh
+```
+Then set the printed repository variables in GitHub. See [DEMO.md](DEMO.md) for the full run-of-show.

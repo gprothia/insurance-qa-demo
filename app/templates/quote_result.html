@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Your quote · Acme Mutual{% endblock %}
+{% block content %}
+<h2>Your quote</h2>
+<dl class="card">
+  <dt>Quote ID</dt><dd data-testid="quote-id">{{ quote.id }}</dd>
+  <dt>Coverage tier</dt><dd data-testid="tier">{{ quote.tier|capitalize }}</dd>
+  <dt>Annual premium</dt><dd data-testid="premium">{{ quote.annual_premium|money }}</dd>
+  <dt>Coverage limit</dt><dd data-testid="coverage-limit">{{ quote.coverage_limit|money }}</dd>
+  <dt>Deductible</dt><dd data-testid="deductible">{{ quote.deductible|money }}</dd>
+  <dt>Valid until</dt><dd data-testid="expires-on">{{ quote.expires_on }}</dd>
+</dl>
+<form method="post" action="/ui/bind">
+  <input type="hidden" name="quote_id" value="{{ quote.id }}">
+  <button type="submit">Buy this policy</button>
+</form>
+{% endblock %}

@@ -1,0 +1,107 @@
+name: pr-sandbox
+
+# For every PR: build the app and test images, deploy them into a throwaway namespace
+# on a shared GKE Autopilot cluster, run the API + UI acceptance tests in-cluster,
+# post the results on the PR, then delete the namespace.
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  id-token: write # Workload Identity Federation (no service account keys)
+  pull-requests: write # post the results comment
+
+env:
+  REGION: ${{ vars.GCP_REGION }}
+  CLUSTER: ${{ vars.GKE_CLUSTER }}
+  REGISTRY: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT }}/${{ vars.AR_REPO }}
+  NS: pr-${{ github.event.number }}
+
+concurrency:
+  group: pr-sandbox-${{ github.event.number }}
+  cancel-in-progress: true
+
+jobs:
+  sandbox-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.CI_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: ${{ env.CLUSTER }}
+          location: ${{ env.REGION }}
+
+      - name: Build and push images
+        run: |
+          gcloud auth configure-docker "$REGION-docker.pkg.dev" -q
+          APP_IMAGE="$REGISTRY/app:${{ github.sha }}"
+          TEST_IMAGE="$REGISTRY/tests:${{ github.sha }}"
+          docker build -t "$APP_IMAGE" -f Dockerfile .
+          docker build -t "$TEST_IMAGE" -f Dockerfile.tests .
+          docker push "$APP_IMAGE"
+          docker push "$TEST_IMAGE"
+          echo "APP_IMAGE=$APP_IMAGE" >> "$GITHUB_ENV"
+          echo "TEST_IMAGE=$TEST_IMAGE" >> "$GITHUB_ENV"
+
+      - name: Create ephemeral sandbox (namespace ${{ env.NS }})
+        run: |
+          kubectl delete namespace "$NS" --ignore-not-found --wait=true
+          kubectl create namespace "$NS"
+          kubectl label namespace "$NS" purpose=pr-sandbox pr="${{ github.event.number }}"
+          sed "s#APP_IMAGE#$APP_IMAGE#" k8s/app.yaml | kubectl -n "$NS" apply -f -
+          kubectl -n "$NS" rollout status deploy/app --timeout=600s
+
+      - name: Run acceptance tests in-cluster
+        id: tests
+        run: |
+          sed "s#TEST_IMAGE#$TEST_IMAGE#" k8s/test-job.yaml | kubectl -n "$NS" apply -f -
+          for _ in $(seq 1 120); do
+            ok=$(kubectl -n "$NS" get job tests -o jsonpath='{.status.succeeded}')
+            ko=$(kubectl -n "$NS" get job tests -o jsonpath='{.status.failed}')
+            [ "$ok" = "1" ] && echo "outcome=passed" >> "$GITHUB_OUTPUT" && break
+            [ -n "$ko" ] && [ "$ko" -ge 1 ] && echo "outcome=failed" >> "$GITHUB_OUTPUT" && break
+            sleep 10
+          done
+          kubectl -n "$NS" logs job/tests > test-output.log || true
+          sed -n '/^<<<JUNIT$/,/^JUNIT>>>$/p' test-output.log | sed '1d;$d' > junit.xml
+          sed '/^<<<JUNIT$/,$d' test-output.log
+
+      - name: Summarize results by Jira acceptance criterion
+        if: always()
+        run: |
+          if [ -s junit.xml ]; then
+            python3 scripts/summarize_junit.py junit.xml > summary.md
+          else
+            echo "### ⚠️ Test run produced no results. See the job logs." > summary.md
+          fi
+          cat summary.md >> "$GITHUB_STEP_SUMMARY"
+          gh pr comment "${{ github.event.number }}" --body-file summary.md --edit-last \
+            || gh pr comment "${{ github.event.number }}" --body-file summary.md
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: |
+            junit.xml
+            test-output.log
+
+      - name: Tear down sandbox
+        if: always()
+        run: kubectl delete namespace "$NS" --ignore-not-found --wait=false
+
+      - name: Fail the check if tests failed
+        if: steps.tests.outputs.outcome != 'passed'
+        run: exit 1

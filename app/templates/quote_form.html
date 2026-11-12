@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Get an auto quote · Acme Mutual{% endblock %}
+{% block content %}
+<h2>Get an auto insurance quote</h2>
+<form method="post" action="/ui/quote">
+  <label for="driver_age">Driver age</label>
+  <input id="driver_age" name="driver_age" type="number" min="0" max="120" required>
+
+  <label for="vehicle_value">Vehicle value</label>
+  <input id="vehicle_value" name="vehicle_value" type="number" min="1" step="0.01" required>
+
+  <label for="prior_accidents">Prior accidents</label>
+  <input id="prior_accidents" name="prior_accidents" type="number" min="0" value="0">
+
+  <label for="tier">Coverage tier</label>
+  <select id="tier" name="tier">
+    {% for name in tiers %}<option value="{{ name }}"{% if name == "standard" %} selected{% endif %}>{{ name|capitalize }}</option>{% endfor %}
+  </select>
+
+  <button type="submit">Get quote</button>
+</form>
+{% endblock %}

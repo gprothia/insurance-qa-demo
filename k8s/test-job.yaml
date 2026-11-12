@@ -1,0 +1,18 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: tests
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 900
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: tests
+          image: TEST_IMAGE
+          env:
+            - name: BASE_URL
+              value: http://app # the app Service in this PR's namespace
+          resources:
+            requests: { cpu: "1", memory: 2Gi } # Chromium needs headroom

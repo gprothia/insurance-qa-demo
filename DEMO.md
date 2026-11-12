@@ -32,8 +32,8 @@ in the tracker.
 > GEMINI.md, write API and UI tests for every acceptance criterion, run them against
 > localhost:8000, fix any test problems, and finish with a table mapping each AC to its test.
 
-Rehearsal result: 8 tests (7 API + 1 UI) generated, all passing on the first run, with the same
-AC coverage as `golden/ins-102-tests`. See branch `rehearsal/ins-102-tests`. The tests run in
+Rehearsal result: 8 tests (7 API + 1 UI) generated, all passing on the first run, covering every
+AC. Saved on branch `rehearsal/ins-102-tests`, which is also the backup below. The tests run in
 under 10 seconds locally.
 
 What to point out while it works: it reads the acceptance criteria, checks `/openapi.json`,
@@ -43,7 +43,7 @@ runs them and fixes them itself. The Playwright test drives a real browser.
 *Markdown variant (1 min):* "Same thing from `specs/INS-102-file-claim.md`", for teams that
 keep specs in the repo.
 
-If generation runs long: `git checkout golden/ins-102-tests -- tests/` and carry on.
+If generation runs long: `git checkout rehearsal/ins-102-tests -- tests/` and carry on.
 
 Commit and open a PR: `git checkout -b ins-102-tests && git add tests && git commit -m "INS-102 acceptance tests" && git push -u origin HEAD`, then open the PR on GitHub.
 

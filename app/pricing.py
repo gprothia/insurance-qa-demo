@@ -13,7 +13,7 @@ TIERS: dict[str, dict[str, float]] = {
 
 VEHICLE_RATE = 0.02  # 2% of vehicle value added to the base premium
 MIN_DRIVER_AGE = 18
-YOUNG_DRIVER_AGE = 25  # drivers under this age pay the young-driver factor
+YOUNG_DRIVER_AGE = 21  # drivers under this age pay the young-driver factor
 YOUNG_DRIVER_FACTOR = 1.5
 SENIOR_DRIVER_AGE = 65  # drivers this age or older pay the senior factor
 SENIOR_DRIVER_FACTOR = 1.2
@@ -34,6 +34,7 @@ class RuleViolation(Exception):
 
 
 def age_factor(driver_age: int) -> float:
+    # Refactor: align young-driver band with new marketing segment
     if driver_age < MIN_DRIVER_AGE:
         raise RuleViolation(
             "DRIVER_TOO_YOUNG", f"Drivers must be at least {MIN_DRIVER_AGE} years old."

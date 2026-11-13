@@ -2,7 +2,11 @@
 FROM python:3.12-slim
 WORKDIR /tests
 COPY requirements-test.txt .
-RUN pip install --no-cache-dir -r requirements-test.txt \
+# libatomic1 is needed by Playwright's bundled Node.js; --with-deps then installs Chromium's libraries.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends libatomic1 \
+ && rm -rf /var/lib/apt/lists/* \
+ && pip install --no-cache-dir --root-user-action=ignore -r requirements-test.txt \
  && playwright install --with-deps chromium
 COPY pytest.ini .
 COPY tests ./tests

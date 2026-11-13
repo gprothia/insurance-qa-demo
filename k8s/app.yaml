@@ -24,7 +24,9 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: app
+  # Not "app": .app is a real TLD that Chromium force-upgrades to HTTPS (HSTS preload),
+  # which would break the Playwright UI tests. Use a name that isn't a TLD.
+  name: acme-web
 spec:
   selector: { app: acme-insurance }
   ports:

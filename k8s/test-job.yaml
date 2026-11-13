@@ -13,6 +13,6 @@ spec:
           image: TEST_IMAGE
           env:
             - name: BASE_URL
-              value: http://app # the app Service in this PR's namespace
+              value: http://acme-web # the app Service in this PR's namespace
           resources:
             requests: { cpu: "1", memory: 2Gi } # Chromium needs headroom
